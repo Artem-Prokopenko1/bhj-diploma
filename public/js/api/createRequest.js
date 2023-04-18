@@ -4,29 +4,34 @@
  * */
 const createRequest = (options = {}) => {
 
-    function createUrlSearchParam(obj){
-        let sp = new URLSearchParams(obj);
-        return sp.toString();
-    }
-
-    let dataParam = createUrlSearchParam(options.data);
-    let url = new URL(options.url);
-    url.search = dataParam;
-
     const xhr = new XMLHttpRequest();
-    xhr.responseType = 'json';
-    
-    if(options.method === "GET"){
+    const formData = new FormData();
+    let url = options.url;
+    let method = options.method;
+    let data = options.data;
 
-    try{
-    xhr.open(options.method, url);
-    xhr.send();
+    xhr.responseType = 'json'
+
+    if(method === 'GET') {
+        url += '?'
+        for(let prop in data) {
+            url += `${prop}=${data[prop]}&`;
+        }
+        url.slice(0, -1)
+    } else {
+        for(let prop in data) {
+            formData.append(prop, data[prop]);
+        }
     }
-    catch(e){
-         // перехват сетевой ошибки
-      callback( e );
+    try {
+        xhr.open(method, url)
+        method === 'GET' ? xhr.send() : xhr.send(formData);
+        xhr.addEventListener('load', () => {
+            if(xhr.DONE && xhr.status === 200) {
+                options.callback(null, xhr.response)
+            }
+        })
+    } catch (error) {
+        options.callback(error);
     }
-}
 };
-
-
